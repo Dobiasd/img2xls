@@ -1,7 +1,7 @@
 # img2xls
 Convert images to colored cells in an Excel table.
 
-[![(screenshot)](screenshot.png)][screenshot]
+![screenshot](screenshot.png "screenshot")
 
 ## Install dependencies
 
