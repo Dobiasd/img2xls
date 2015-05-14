@@ -3,6 +3,8 @@
 """
 import sys
 import xlwt
+import os
+import re
 from PIL import Image
 
 def img2xls(img_path, xls_path):
@@ -13,7 +15,9 @@ def img2xls(img_path, xls_path):
 
     # Create Table.
     book = xlwt.Workbook()
-    sheet1 = book.add_sheet(img_path)
+    
+    #
+    sheet1 = book.add_sheet(re.sub('[^\.0-9a-zA-Z]+', '', os.path.basename(img_path)))
 
     # Scale image down if needed.
     if width > 256 or height > 256:
