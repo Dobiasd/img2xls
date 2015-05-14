@@ -70,7 +70,7 @@ def img2xls(img_path, xls_path):
 
     # Scale table cells.
     maxEdge = max(width, height)
-    colWidth = int(25000 / maxEdge)
+    colWidth = int(135000 / maxEdge)
     rowHeight = int(10000 / maxEdge)
     for x in range(width):
         col = sheet1.col(x).width = colWidth
