@@ -15,14 +15,16 @@ def img2xls(img_path, xls_path):
 
     # Create Table.
     book = xlwt.Workbook()
-    
-    #
-    sheet1 = book.add_sheet(re.sub('[^\.0-9a-zA-Z]+', '', os.path.basename(img_path)))
+
+    # Create new sheet with valid name.
+    sheet1 = book.add_sheet(re.sub('[^\.0-9a-zA-Z]+', '',
+        os.path.basename(img_path)))
 
     # Scale image down if needed.
     if width > 256 or height > 256:
         factor = 256.0 / max(width, height)
-        im = im.resize((int(factor * width), int(factor * height)), Image.BILINEAR)
+        im = im.resize((int(factor * width), int(factor * height)),
+            Image.BILINEAR)
         width, height = im.size
 
     #  Reduce image colors.
