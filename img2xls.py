@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""Convert images to colored cells in an Excel table.
+"""Convert images to colored cells in an Excel spreadsheet.
 """
 import sys
 import xlwt
