@@ -1,5 +1,5 @@
 # img2xls
-Convert images to colored cells in an Excel table.
+Convert images to colored cells in an Excel spreadsheet.
 
 ![screenshot](screenshot.png "screenshot")
 
