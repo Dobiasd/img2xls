@@ -10,6 +10,6 @@ Convert images to colored cells in an Excel spreadsheet.
 
 ## Usage
 
-    python3 img2xls.py image.png
+    python3 img2xls.py -l image.png
 
 image.png.xls will be created.
