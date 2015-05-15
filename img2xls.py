@@ -7,8 +7,6 @@ import os
 import re
 from PIL import Image
 
-c_width = 0
-
 def img2xls(c_width, img_path, xls_path):
     # Load image.
     im = Image.open(img_path)
@@ -105,17 +103,15 @@ def main():
     img_path = sys.argv[2]
     xls_path = img_path + ".xls"
 
-    if switch in ("libre"):
-        c_width = 25000
-    elif switch in ("ms"):
-        c_width = 135000
-    elif switch in ("mac"):
-        c_width = 135000
-    else:
+    size_dict = { "libre": 25000
+                , "ms": 135000
+                , "mac": 135000 }
+
+    if not switch in size_dict:
         print_usage()
         sys.exit(2)
 
-    img2xls(c_width, img_path, xls_path)
+    img2xls(size_dict[switch], img_path, xls_path)
 
 if __name__ == "__main__":
     sys.exit(main())
