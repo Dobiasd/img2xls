@@ -92,9 +92,9 @@ def img2xls(c_width, img_path, xls_path):
 
 def print_usage():
     print("Usage: python img2xls.py format image")
-    print("       format = libre -> LibreOffice xls")
-    print("       format = ms    -> Microsoft Office xls")
-    print("       format = mac   -> Mac Office xls")
+    print("                         format = libre -> LibreOffice xls")
+    print("                         format = ms    -> Microsoft Office xls")
+    print("                         format = mac   -> Mac Office xls")
 
 def main():
     if len(sys.argv) != 3:
