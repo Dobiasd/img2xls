@@ -102,7 +102,6 @@ def img2xls(c_width, img_path, xls_path):
 
     book, sheet1 = create_workbook_with_sheet(img_path)
 
-
     pallookup = get_pal_lookup(palImg)
 
     gen_custom_palette(im, palImg, pallookup, book)
@@ -113,7 +112,6 @@ def img2xls(c_width, img_path, xls_path):
 
     set_cell_colors(palImg, pallookup, style_lookup, sheet1)
 
-    # Save finished work of art.
     book.save(xls_path)
     print('saved', xls_path)
 
