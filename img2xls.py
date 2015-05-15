@@ -7,7 +7,9 @@ import os
 import re
 from PIL import Image
 
-def img2xls(img_path, xls_path):
+c_width = 0
+
+def img2xls(c_width, img_path, xls_path):
     # Load image.
     im = Image.open(img_path)
     im = im.convert('RGB')
@@ -70,7 +72,7 @@ def img2xls(img_path, xls_path):
 
     # Scale table cells.
     maxEdge = max(width, height)
-    colWidth = int(25000 / maxEdge)
+    colWidth = int(c_width / maxEdge)
     rowHeight = int(10000 / maxEdge)
     for x in range(width):
         col = sheet1.col(x).width = colWidth
@@ -89,14 +91,29 @@ def img2xls(img_path, xls_path):
     print( 'saved', xls_path )
 
 def main():
-    if len(sys.argv) != 2:
-        print( "image path?" )
+    if len(sys.argv) != 3:
+        print "Usage: python img2xls.py args image"
+        print "Usage: -l switch = LibreOffice xls"
+        print "Usage: -o switch = Microsoft Office xls"
         sys.exit(2)
 
-    img_path = sys.argv[1]
+    switch = sys.argv[1]
+    img_path = sys.argv[2]
     xls_path = img_path + ".xls"
 
-    img2xls(img_path, xls_path)
+    if switch in ("-l", "--libre"):
+        c_width = 25000
+    elif switch in ("-o", "--ms"):
+        c_width = 135000
+    elif switch in ("-a", "--mac"):
+        c_width = 135000
+    else:
+        print "Usage: python img2xls.py args image"
+        print "Usage: -l or --libre switch = LibreOffice xls"
+        print "Usage: -o or --office switch = Microsoft Office xls"
+        sys.exit(2)
+
+    img2xls(c_width, img_path, xls_path)
 
 if __name__ == "__main__":
     sys.exit(main())
