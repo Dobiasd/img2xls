@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """Convert images to colored cells in an Excel spreadsheet.
 """
 import sys
@@ -62,7 +62,7 @@ def img2xls(img_path, xls_path):
 
     # Generate cell styles with custom colors.
     style_lookup = {}
-    for key, val in pallookup.iteritems():
+    for key, val in pallookup.items():
         style = xlwt.easyxf(
             'pattern: pattern solid, fore_colour ' + gen_col_name(val))
         style.pattern.pattern_fore_colour = val
@@ -86,11 +86,11 @@ def img2xls(img_path, xls_path):
 
     # Save finished work of art.
     book.save(xls_path)
-    print 'saved', xls_path
+    print( 'saved', xls_path )
 
 def main():
     if len(sys.argv) != 2:
-        print "image path?"
+        print( "image path?" )
         sys.exit(2)
 
     img_path = sys.argv[1]

@@ -5,11 +5,11 @@ Convert images to colored cells in an Excel spreadsheet.
 
 ## Install dependencies
 
-    pip install Pillow
-    pip install xlwt
+    pip3 install Pillow
+    pip3 install xlwt
 
 ## Usage
 
-    python img2xls.py image.png
+    python3 img2xls.py image.png
 
 image.png.xls will be created.
