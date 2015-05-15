@@ -90,28 +90,29 @@ def img2xls(c_width, img_path, xls_path):
     book.save(xls_path)
     print('saved', xls_path)
 
+def print_usage():
+    print("Usage: python img2xls.py format image")
+    print("       format = libre -> LibreOffice xls")
+    print("       format = ms    -> Microsoft Office xls")
+    print("       format = mac   -> Mac Office xls")
+
 def main():
     if len(sys.argv) != 3:
-        print("Usage: python img2xls.py args image")
-        print("Usage: -l switch = LibreOffice xls")
-        print("Usage: -m switch = Microsoft Office xls")
-        print("Usage: -a switch = Mac Office xls")
+        print_usage()
         sys.exit(2)
 
     switch = sys.argv[1]
     img_path = sys.argv[2]
     xls_path = img_path + ".xls"
 
-    if switch in ("-l", "--libre"):
+    if switch in ("libre"):
         c_width = 25000
-    elif switch in ("-m", "--ms"):
+    elif switch in ("ms"):
         c_width = 135000
-    elif switch in ("-a", "--mac"):
+    elif switch in ("mac"):
         c_width = 135000
     else:
-        print("Usage: python img2xls.py args image")
-        print("Usage: -l or --libre switch = LibreOffice xls")
-        print("Usage: -o or --office switch = Microsoft Office xls")
+        print_usage()
         sys.exit(2)
 
     img2xls(c_width, img_path, xls_path)
