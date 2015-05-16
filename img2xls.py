@@ -21,8 +21,15 @@ def prepare_image(im):
     return im
 
 def get_col_reduced_palette_image(im):
-    colCnt = 63-8 # Excel does not allow more custom colors.
+    # Excel does not allow more custom colors.
+    cust_col_num_range = (8, 64)
+    colCnt = cust_col_num_range[1] - cust_col_num_range[0]
     palImg = im.convert('P', palette=Image.ADAPTIVE, colors=colCnt)
+    palPix = palImg.load()
+    width, height = palImg.size
+    for y in range(height):
+        for x in range(width):
+            palPix[x,y] += cust_col_num_range[0]
     return palImg
 
 def scale_table_cells(sheet1, imgSize, c_width):
@@ -42,58 +49,36 @@ def create_workbook_with_sheet(name_suggestion):
     sheet1 = book.add_sheet(valid_name)
     return book, sheet1
 
-def get_pal_lookup(palImg):
-    # Gather color values.
-    palVals = set()
-    width, height = palImg.size
-    palPix = palImg.load()
-    for y in range(height):
-        for x in range(width):
-            palVals.add(palPix[x,y])
-
-    # Generate an index for every color.
-    pallookup = {}
-    for idx, val in enumerate(palVals, start=8):
-        pallookup[val] = idx
-
-    return pallookup
-
-def gen_col_name(idx):
-        return "custom_colour_" + str(idx)
-
-def gen_custom_palette(im, palImg, pallookup, book):
+def gen_style_lookup(im, palImg, book):
     pix = im.load()
     palPix = palImg.load()
     width, height = im.size
     assert(im.size == palImg.size)
-    alreadyHadCol = set()
+    alreadyUsedColors = set()
+    style_lookup = {}
     for y in range(height):
         for x in range(width):
-            palcolnum = pallookup[palPix[x,y]]
-            if palcolnum in alreadyHadCol:
+            palcolnum = palPix[x,y]
+            if palcolnum in alreadyUsedColors:
                 continue
-            alreadyHadCol.add(palcolnum)
+            alreadyUsedColors.add(palcolnum)
             r, g, b = pix[x,y]
-            xlwt.add_palette_colour(gen_col_name(palcolnum), palcolnum)
+            col_name = "custom_colour_" + str(palcolnum)
+            xlwt.add_palette_colour(col_name, palcolnum)
             book.set_colour_RGB(palcolnum, r, g, b)
+            style = xlwt.easyxf('pattern: pattern solid, fore_colour ' +
+                                    col_name)
+            style.pattern.pattern_fore_colour = palcolnum
+            style_lookup[palcolnum] = style
+    return style_lookup
 
-def set_cell_colors(palImg, pallookup, style_lookup, sheet):
+def set_cell_colors(palImg, style_lookup, sheet):
     palPix = palImg.load()
     width, height = palImg.size
     for y in range(height):
         for x in range(width):
-            palcolnum = pallookup[palPix[x,y]]
-            style = style_lookup[palcolnum]
-            sheet.write(y, x, ' ', style)
-
-def gen_custom_colored_cell_styles(pallookup):
-    style_lookup = {}
-    for key, val in pallookup.items():
-        style = xlwt.easyxf(
-            'pattern: pattern solid, fore_colour ' + gen_col_name(val))
-        style.pattern.pattern_fore_colour = val
-        style_lookup[val] = style
-    return style_lookup
+            palcolnum = palPix[x,y]
+            sheet.write(y, x, ' ', style_lookup[palcolnum])
 
 def img2xls(c_width, img_path, xls_path):
     im = load_image_rgb(img_path)
@@ -102,15 +87,11 @@ def img2xls(c_width, img_path, xls_path):
 
     book, sheet1 = create_workbook_with_sheet(img_path)
 
-    pallookup = get_pal_lookup(palImg)
+    style_lookup = gen_style_lookup(im, palImg, book)
 
-    gen_custom_palette(im, palImg, pallookup, book)
-
-    style_lookup = gen_custom_colored_cell_styles(pallookup)
+    set_cell_colors(palImg, style_lookup, sheet1)
 
     scale_table_cells(sheet1, im.size, c_width)
-
-    set_cell_colors(palImg, pallookup, style_lookup, sheet1)
 
     book.save(xls_path)
     print('saved', xls_path)
