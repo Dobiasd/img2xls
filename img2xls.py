@@ -15,10 +15,15 @@ def prepare_image(im):
     """Scales down if needed"""
     width, height = im.size
     if width > 256 or height > 256:
-        factor = 256.0 / max(width, height)
-        im = im.resize((int(factor * width), int(factor * height)),
-            Image.BILINEAR)
+        fact = 256.0 / max(width, height)
+        im = im.resize((int(fact*width), int(fact*height)), Image.BILINEAR)
     return im
+
+def map2d(size, func):
+    width, height = size
+    for y in range(height):
+        for x in range(width):
+            func(x, y)
 
 def get_col_reduced_palette_image(im):
     # Excel does not allow more custom colors.
@@ -26,10 +31,9 @@ def get_col_reduced_palette_image(im):
     colCnt = cust_col_num_range[1] - cust_col_num_range[0]
     palImg = im.convert('P', palette=Image.ADAPTIVE, colors=colCnt)
     palPix = palImg.load()
-    width, height = palImg.size
-    for y in range(height):
-        for x in range(width):
-            palPix[x,y] += cust_col_num_range[0]
+    def add_col_offset(x, y):
+        palPix[x,y] += cust_col_num_range[0]
+    map2d(palImg.size, add_col_offset)
     return palImg
 
 def scale_table_cells(sheet1, imgSize, c_width):
@@ -52,33 +56,31 @@ def create_workbook_with_sheet(name_suggestion):
 def gen_style_lookup(im, palImg, book):
     pix = im.load()
     palPix = palImg.load()
-    width, height = im.size
     assert(im.size == palImg.size)
     alreadyUsedColors = set()
     style_lookup = {}
-    for y in range(height):
-        for x in range(width):
-            palcolnum = palPix[x,y]
-            if palcolnum in alreadyUsedColors:
-                continue
-            alreadyUsedColors.add(palcolnum)
-            r, g, b = pix[x,y]
-            col_name = "custom_colour_" + str(palcolnum)
-            xlwt.add_palette_colour(col_name, palcolnum)
-            book.set_colour_RGB(palcolnum, r, g, b)
-            style = xlwt.easyxf('pattern: pattern solid, fore_colour ' +
-                                    col_name)
-            style.pattern.pattern_fore_colour = palcolnum
-            style_lookup[palcolnum] = style
+
+    def add_style_lookup(x, y):
+        palcolnum = palPix[x,y]
+        if palcolnum in alreadyUsedColors:
+            return
+        alreadyUsedColors.add(palcolnum)
+        col_name = "custom_colour_" + str(palcolnum)
+        xlwt.add_palette_colour(col_name, palcolnum)
+        book.set_colour_RGB(palcolnum, *pix[x,y])
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
+        style.pattern.pattern_fore_colour = palcolnum
+        style_lookup[palcolnum] = style
+
+    map2d(im.size, add_style_lookup)
+
     return style_lookup
 
 def set_cell_colors(palImg, style_lookup, sheet):
     palPix = palImg.load()
-    width, height = palImg.size
-    for y in range(height):
-        for x in range(width):
-            palcolnum = palPix[x,y]
-            sheet.write(y, x, ' ', style_lookup[palcolnum])
+    def write_sheet_cell(x, y):
+        sheet.write(y, x, ' ', style_lookup[palPix[x,y]])
+    map2d(palImg.size, write_sheet_cell)
 
 def img2xls(c_width, img_path, xls_path):
     im = load_image_rgb(img_path)
