@@ -8,92 +8,91 @@ import re
 from PIL import Image
 
 def load_image_rgb(path):
-    im = Image.open(path)
-    return im.convert('RGB')
+    img = Image.open(path)
+    return img.convert('RGB')
 
-def prepare_image(im):
+def prepare_image(img):
     """Scales down if needed"""
-    width, height = im.size
+    width, height = img.size
     if width > 256 or height > 256:
         fact = 256.0 / max(width, height)
-        im = im.resize((int(fact*width), int(fact*height)), Image.BILINEAR)
-    return im
+        img = img.resize((int(fact*width), int(fact*height)), Image.BILINEAR)
+    return img
 
 def map2d(size, func):
     width, height = size
-    for y in range(height):
-        for x in range(width):
-            func(x, y)
+    for y_pos in range(height):
+        for x_pos in range(width):
+            func(x_pos, y_pos)
 
-def get_col_reduced_palette_image(im):
+def get_col_reduced_palette_image(img):
     # Excel does not allow more custom colors.
     cust_col_num_range = (8, 64)
-    colCnt = cust_col_num_range[1] - cust_col_num_range[0]
-    palImg = im.convert('P', palette=Image.ADAPTIVE, colors=colCnt)
-    palPix = palImg.load()
-    def add_col_offset(x, y):
-        palPix[x,y] += cust_col_num_range[0]
-    map2d(palImg.size, add_col_offset)
-    return palImg
+    col_cnt = cust_col_num_range[1] - cust_col_num_range[0]
+    pal_img = img.convert('P', palette=Image.ADAPTIVE, colors=col_cnt)
+    pal_pixels = pal_img.load()
+    def add_col_offset(x_pos, y_pos):
+        pal_pixels[x_pos, y_pos] += cust_col_num_range[0]
+    map2d(pal_img.size, add_col_offset)
+    return pal_img
 
-def scale_table_cells(sheet1, imgSize, c_width):
-    width, height = imgSize
-    maxEdge = max(width, height)
-    colWidth = int(c_width / maxEdge)
-    rowHeight = int(10000 / maxEdge)
-    for x in range(width):
-        col = sheet1.col(x).width = colWidth
-    for y in range(height):
-        row = sheet1.row(y).height = rowHeight
+def scale_table_cells(sheet1, img_size, c_width):
+    width, height = img_size
+    max_edge = max(width, height)
+    col_width = int(c_width / max_edge)
+    row_height = int(10000 / max_edge)
+    for x_pos in range(width):
+        sheet1.col(x_pos).width = col_width
+    for y_pos in range(height):
+        sheet1.row(y_pos).height = row_height
 
-def create_workbook_with_sheet(name_suggestion):
+def create_workbook_with_sheet(name):
     book = xlwt.Workbook()
-    valid_name = re.sub('[^\.0-9a-zA-Z]+', '',
-        os.path.basename(name_suggestion))
+    valid_name = re.sub(r'[^\.0-9a-zA-Z]+', '', os.path.basename(name))
     sheet1 = book.add_sheet(valid_name)
     return book, sheet1
 
-def gen_style_lookup(im, palImg, book):
-    pix = im.load()
-    palPix = palImg.load()
-    assert(im.size == palImg.size)
-    alreadyUsedColors = set()
+def gen_style_lookup(img, pal_img, book):
+    img_pixels = img.load()
+    pal_pixels = pal_img.load()
+    assert img.size == pal_img.size
+    already_used_colors = set()
     style_lookup = {}
 
-    def add_style_lookup(x, y):
-        palcolnum = palPix[x,y]
-        if palcolnum in alreadyUsedColors:
+    def add_style_lookup(x_pos, y_pos):
+        palcolnum = pal_pixels[x_pos, y_pos]
+        if palcolnum in already_used_colors:
             return
-        alreadyUsedColors.add(palcolnum)
+        already_used_colors.add(palcolnum)
         col_name = "custom_colour_" + str(palcolnum)
         xlwt.add_palette_colour(col_name, palcolnum)
-        book.set_colour_RGB(palcolnum, *pix[x,y])
+        book.set_colour_RGB(palcolnum, *img_pixels[x_pos, y_pos])
         style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
         style.pattern.pattern_fore_colour = palcolnum
         style_lookup[palcolnum] = style
 
-    map2d(im.size, add_style_lookup)
+    map2d(img.size, add_style_lookup)
 
     return style_lookup
 
-def set_cell_colors(palImg, style_lookup, sheet):
-    palPix = palImg.load()
-    def write_sheet_cell(x, y):
-        sheet.write(y, x, ' ', style_lookup[palPix[x,y]])
-    map2d(palImg.size, write_sheet_cell)
+def set_cell_colors(pal_img, style_lookup, sheet):
+    pal_pixels = pal_img.load()
+    def write_sheet_cell(x_pos, y_pos):
+        sheet.write(y_pos, x_pos, ' ', style_lookup[pal_pixels[x_pos, y_pos]])
+    map2d(pal_img.size, write_sheet_cell)
 
 def img2xls(c_width, img_path, xls_path):
-    im = load_image_rgb(img_path)
-    im = prepare_image(im)
-    palImg = get_col_reduced_palette_image(im)
+    img = load_image_rgb(img_path)
+    img = prepare_image(img)
+    pal_img = get_col_reduced_palette_image(img)
 
     book, sheet1 = create_workbook_with_sheet(img_path)
 
-    style_lookup = gen_style_lookup(im, palImg, book)
+    style_lookup = gen_style_lookup(img, pal_img, book)
 
-    set_cell_colors(palImg, style_lookup, sheet1)
+    set_cell_colors(pal_img, style_lookup, sheet1)
 
-    scale_table_cells(sheet1, im.size, c_width)
+    scale_table_cells(sheet1, img.size, c_width)
 
     book.save(xls_path)
     print('saved', xls_path)
@@ -116,9 +115,7 @@ def main():
     img_path = sys.argv[2]
     xls_path = img_path + ".xls"
 
-    size_dict = { "libre": 25000
-                , "ms": 135000
-                , "mac": 135000 }
+    size_dict = {"libre": 25000, "ms": 135000, "mac": 135000}
 
     if not switch in size_dict:
         abort_with_usage()
