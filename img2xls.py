@@ -8,6 +8,7 @@ import re
 from PIL import Image
 
 def load_image_rgb(path):
+    """Ensures the image to be in RGB format."""
     img = Image.open(path)
     return img.convert('RGB')
 
@@ -20,13 +21,14 @@ def prepare_image(img):
     return img
 
 def map2d(size, func):
+    """Apply function to every point in [(0,0) ... (width-1, height-1)]."""
     width, height = size
     for y_pos in range(height):
         for x_pos in range(width):
             func(x_pos, y_pos)
 
 def get_col_reduced_palette_image(img):
-    # Excel does not allow more custom colors.
+    """Returns image reduced to in Excel allowed number of colors."""
     cust_col_num_range = (8, 64)
     col_cnt = cust_col_num_range[1] - cust_col_num_range[0]
     pal_img = img.convert('P', palette=Image.ADAPTIVE, colors=col_cnt)
@@ -37,6 +39,7 @@ def get_col_reduced_palette_image(img):
     return pal_img
 
 def scale_table_cells(sheet1, img_size, c_width):
+    """Adjust cell size to image resolution."""
     width, height = img_size
     max_edge = max(width, height)
     col_width = int(c_width / max_edge)
@@ -47,12 +50,14 @@ def scale_table_cells(sheet1, img_size, c_width):
         sheet1.row(y_pos).height = row_height
 
 def create_workbook_with_sheet(name):
+    """Removes non-alpha-numerical values in name."""
     book = xlwt.Workbook()
     valid_name = re.sub(r'[^\.0-9a-zA-Z]+', '', os.path.basename(name))
     sheet1 = book.add_sheet(valid_name)
     return book, sheet1
 
 def gen_style_lookup(img, pal_img, book):
+    """Create lookup dict for accessing spreadsheet styles by image color."""
     img_pixels = img.load()
     pal_pixels = pal_img.load()
     assert img.size == pal_img.size
@@ -76,12 +81,14 @@ def gen_style_lookup(img, pal_img, book):
     return style_lookup
 
 def set_cell_colors(pal_img, style_lookup, sheet):
+    """Pixelwise copies colors from image into table."""
     pal_pixels = pal_img.load()
     def write_sheet_cell(x_pos, y_pos):
         sheet.write(y_pos, x_pos, ' ', style_lookup[pal_pixels[x_pos, y_pos]])
     map2d(pal_img.size, write_sheet_cell)
 
 def img2xls(c_width, img_path, xls_path):
+    """Convert image to spreadsheet."""
     img = load_image_rgb(img_path)
     img = prepare_image(img)
     pal_img = get_col_reduced_palette_image(img)
@@ -98,16 +105,19 @@ def img2xls(c_width, img_path, xls_path):
     print('saved', xls_path)
 
 def print_usage():
+    """Show command line usage."""
     print("Usage: python img2xls.py format image")
     print("                         format = libre -> LibreOffice xls")
     print("                         format = ms    -> Microsoft Office xls")
     print("                         format = mac   -> Mac Office xls")
 
 def abort_with_usage():
+    """Quit program because of invalid command line usage."""
     print_usage()
     sys.exit(2)
 
 def main():
+    """Parse command line and run."""
     if len(sys.argv) != 3:
         abort_with_usage()
 
