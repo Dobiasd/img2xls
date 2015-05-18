@@ -34,6 +34,7 @@ def get_col_reduced_palette_image(img):
     pal_img = img.convert('P', palette=Image.ADAPTIVE, colors=col_cnt)
     pal_pixels = pal_img.load()
     def add_col_offset(x_pos, y_pos):
+        """Add minimum color number to a pixel in palette image."""
         pal_pixels[x_pos, y_pos] += cust_col_num_range[0]
     map2d(pal_img.size, add_col_offset)
     return pal_img
@@ -66,6 +67,7 @@ def gen_style_lookup(img, pal_img, book):
     style_lookup = {}
 
     def add_style_lookup(x_pos, y_pos):
+        """Add a new style to lookup table for one pixel if needed."""
         palcolnum = pal_pixels[x_pos, y_pos]
         if palcolnum in already_used_colors:
             return
@@ -85,6 +87,7 @@ def set_cell_colors(pal_img, style_lookup, sheet):
     """Pixelwise copies colors from image into table."""
     pal_pixels = pal_img.load()
     def write_sheet_cell(x_pos, y_pos):
+        """Set a single pixel, i.e. cell, in table."""
         sheet.write(y_pos, x_pos, ' ', style_lookup[pal_pixels[x_pos, y_pos]])
     map2d(pal_img.size, write_sheet_cell)
 
