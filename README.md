@@ -6,7 +6,7 @@ Convert images to colored cells in an Excel spreadsheet.
 ## Install dependencies
 
     pip3 install Pillow
-    pip3 install xlwt
+    pip3 install xlwt3
 
 ## Usage
 
