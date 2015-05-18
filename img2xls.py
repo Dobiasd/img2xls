@@ -132,7 +132,7 @@ def main():
         abort_with_usage()
 
     img_path = sys.argv[2]
-    xls_path = img_path + ".xls"
+    xls_path = img_path + "." + switch + ".xls"
 
     img2xls(size_dict[switch], img_path, xls_path)
 
