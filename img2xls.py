@@ -38,12 +38,13 @@ def get_col_reduced_palette_image(img):
     map2d(pal_img.size, add_col_offset)
     return pal_img
 
-def scale_table_cells(sheet1, img_size, c_width):
+def scale_table_cells(sheet1, img_size, c_size):
     """Adjust cell size to image resolution."""
     width, height = img_size
+    c_width, c_height = c_size
     max_edge = max(width, height)
     col_width = int(c_width / max_edge)
-    row_height = int(10000 / max_edge)
+    row_height = int(c_height / max_edge)
     for x_pos in range(width):
         sheet1.col(x_pos).width = col_width
     for y_pos in range(height):
@@ -122,13 +123,16 @@ def main():
         abort_with_usage()
 
     switch = sys.argv[1]
-    img_path = sys.argv[2]
-    xls_path = img_path + ".xls"
 
-    size_dict = {"libre": 25000, "ms": 135000, "mac": 135000}
+    size_dict = {"libre": (25000, 10000),
+                 "ms": (50000, 10000),
+                 "mac": (135000, 10000)}
 
     if not switch in size_dict:
         abort_with_usage()
+
+    img_path = sys.argv[2]
+    xls_path = img_path + ".xls"
 
     img2xls(size_dict[switch], img_path, xls_path)
 
