@@ -8,7 +8,7 @@ import re
 from PIL import Image
 
 # constants for accessing the correct style-variation
-STYLE_COUNT = 4
+STYLE_CNT = 4
 STYLE_OFFSET_BORDER_TOP = 1
 STYLE_OFFSET_BORDER_LEFT = 2
 STYLE_OFFSET_BORDER_TOPLEFT = 3
@@ -89,26 +89,26 @@ def gen_style_lookup(img, pal_img, book):
         # cell without borders
         style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
         style.pattern.pattern_fore_colour = palcolnum
-        style_lookup[palcolnum * STYLE_COUNT] = style
+        style_lookup[palcolnum * STYLE_CNT] = style
 
         # cell with top border
         style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
         style.pattern.pattern_fore_colour = palcolnum
         style.borders.top = 1
-        style_lookup[palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_TOP] = style
+        style_lookup[palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_TOP] = style
 
         # cell with left border
         style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
         style.pattern.pattern_fore_colour = palcolnum
         style.borders.left = 1
-        style_lookup[palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_LEFT] = style
+        style_lookup[palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_LEFT] = style
 
         # cell with topleft border
         style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
         style.pattern.pattern_fore_colour = palcolnum
         style.borders.top = 1
         style.borders.left = 1
-        style_lookup[palcolnum*STYLE_COUNT +STYLE_OFFSET_BORDER_TOPLEFT] = style
+        style_lookup[palcolnum*STYLE_CNT +STYLE_OFFSET_BORDER_TOPLEFT] = style
 
     map2d(img.size, add_style_lookup)
 
@@ -127,20 +127,20 @@ def set_cell_colors(pal_img, style_lookup, sheet, grid_gap_vert=0,
             # is always zero
             if grid_gap_vert > 0 and x_pos % grid_gap_vert == 0:
                 if grid_gap_horiz > 0 and y_pos % grid_gap_horiz == 0:
-                    idx = palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_TOPLEFT
+                    idx = palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_TOPLEFT
                     style = style_lookup[idx]
                 else:
-                    idx = palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_LEFT
+                    idx = palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_LEFT
                     style = style_lookup[idx]
             elif grid_gap_horiz > 0 and y_pos % grid_gap_horiz == 0:
-                idx = palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_TOP
+                idx = palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_TOP
                 style = style_lookup[idx]
             else:
                 # No borders needed
-                style = style_lookup[palcolnum * STYLE_COUNT]
+                style = style_lookup[palcolnum * STYLE_CNT]
         else:
             # No borders wanted
-            style = style_lookup[palcolnum * STYLE_COUNT]
+            style = style_lookup[palcolnum * STYLE_CNT]
         # Write style for the cell to the sheet
         sheet.write(y_pos, x_pos, ' ', style)
 
@@ -156,7 +156,8 @@ def img2xls(c_width, img_path, xls_path, grid_gap_vert, grid_gap_horiz):
 
     style_lookup = gen_style_lookup(img, pal_img, book)
 
-    set_cell_colors(pal_img, style_lookup, sheet1, grid_gap_vert, grid_gap_horiz)
+    set_cell_colors(pal_img, style_lookup, sheet1, grid_gap_vert,
+                    grid_gap_horiz)
 
     scale_table_cells(sheet1, img.size, c_width)
 
@@ -216,7 +217,8 @@ def main():
 
     xls_path = img_path + "." + switch + ".xls"
 
-    img2xls(size_dict[switch], img_path, xls_path, grid_gap_vert, grid_gap_horiz)
+    img2xls(size_dict[switch], img_path, xls_path, grid_gap_vert,
+            grid_gap_horiz)
 
 if __name__ == "__main__":
     sys.exit(main())
