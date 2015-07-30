@@ -7,6 +7,12 @@ import os
 import re
 from PIL import Image
 
+"""constants for accessing the correct style-variation"""
+STYLE_COUNT = 4
+STYLE_OFFSET_BORDER_TOP = 1
+STYLE_OFFSET_BORDER_LEFT = 2
+STYLE_OFFSET_BORDER_TOPLEFT = 3
+
 def load_image_rgb(path):
     """Ensures the image to be in RGB format."""
     img = Image.open(path)
@@ -71,27 +77,76 @@ def gen_style_lookup(img, pal_img, book):
         palcolnum = pal_pixels[x_pos, y_pos]
         if palcolnum in already_used_colors:
             return
+        """We need to define a style for every possible style-combination"""
+        """In our case: 1) cell without border 2) cell with top border"""
+        """ 3) cell with left border 4) cell with top & left border"""
+
         already_used_colors.add(palcolnum)
         col_name = "custom_colour_" + str(palcolnum)
         xlwt.add_palette_colour(col_name, palcolnum)
         book.set_colour_RGB(palcolnum, *img_pixels[x_pos, y_pos])
+
+        """cell without borders"""
         style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
         style.pattern.pattern_fore_colour = palcolnum
-        style_lookup[palcolnum] = style
+        style_lookup[palcolnum * STYLE_COUNT] = style
+
+        """cell with top border"""
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
+        style.pattern.pattern_fore_colour = palcolnum
+        style.borders.top = 1
+        style_lookup[palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_TOP] = style
+
+        """cell with left border"""
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
+        style.pattern.pattern_fore_colour = palcolnum
+        style.borders.left = 1
+        style_lookup[palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_LEFT] = style
+
+        """cell with topleft border"""
+        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
+        style.pattern.pattern_fore_colour = palcolnum
+        style.borders.top = 1
+        style.borders.left = 1
+        style_lookup[palcolnum*STYLE_COUNT +STYLE_OFFSET_BORDER_TOPLEFT] = style
 
     map2d(img.size, add_style_lookup)
 
     return style_lookup
 
-def set_cell_colors(pal_img, style_lookup, sheet):
+def set_cell_colors(pal_img, style_lookup, sheet,   grid_gap_vert = 0,
+                                                    grid_gap_horiz = 0):
     """Pixelwise copies colors from image into table."""
     pal_pixels = pal_img.load()
     def write_sheet_cell(x_pos, y_pos):
         """Set a single pixel, i.e. cell, in table."""
-        sheet.write(y_pos, x_pos, ' ', style_lookup[pal_pixels[x_pos, y_pos]])
+
+        palcolnum = pal_pixels[x_pos, y_pos]
+        if grid_gap_vert > 0 or grid_gap_horiz > 0:
+            """Testing for a positive value because x modulo a negative number
+            is always zero """
+            if grid_gap_vert > 0 and x_pos % grid_gap_vert == 0:
+                if grid_gap_horiz > 0 and y_pos % grid_gap_horiz == 0:
+                    idx = palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_TOPLEFT
+                    style = style_lookup[idx]
+                else:
+                    idx = palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_LEFT
+                    style = style_lookup[idx]
+            elif grid_gap_horiz > 0 and y_pos % grid_gap_horiz == 0:
+                idx = palcolnum * STYLE_COUNT + STYLE_OFFSET_BORDER_TOP
+                style = style_lookup[idx]
+            else:
+                """No borders needed"""
+                style = style_lookup[palcolnum * STYLE_COUNT]
+        else:
+            """No borders wanted"""
+            style = style_lookup[palcolnum * STYLE_COUNT]
+        """Write style for the cell to the sheet"""
+        sheet.write(y_pos, x_pos, ' ', style)
+
     map2d(pal_img.size, write_sheet_cell)
 
-def img2xls(c_width, img_path, xls_path):
+def img2xls(c_width, img_path, xls_path, grid_gap_vert, grid_gap_horiz):
     """Convert image to spreadsheet."""
     img = load_image_rgb(img_path)
     img = prepare_image(img)
@@ -101,7 +156,7 @@ def img2xls(c_width, img_path, xls_path):
 
     style_lookup = gen_style_lookup(img, pal_img, book)
 
-    set_cell_colors(pal_img, style_lookup, sheet1)
+    set_cell_colors(pal_img, style_lookup, sheet1, grid_gap_vert,grid_gap_horiz)
 
     scale_table_cells(sheet1, img.size, c_width)
 
@@ -110,19 +165,29 @@ def img2xls(c_width, img_path, xls_path):
 
 def print_usage():
     """Show command line usage."""
-    print("Usage: python img2xls.py format image")
+    print("Usage: python img2xls.py format \
+[--grid <vertical gap> <horizontal gap>] image")
     print("                         format = libre -> LibreOffice xls")
     print("                         format = ms    -> Microsoft Office xls")
     print("                         format = mac   -> Mac Office xls")
+    print("                         --grid 10 0 -> every 10 pixels there will\
+be a vertical grid line. 0 means no grid on this axis")
 
 def abort_with_usage():
     """Quit program because of invalid command line usage."""
     print_usage()
     sys.exit(2)
 
+def isint(s):
+    try:
+        int(s)
+        return True
+    except:
+        return False
+
 def main():
     """Parse command line and run."""
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 3 and len(sys.argv) != 6:
         abort_with_usage()
 
     switch = sys.argv[1]
@@ -134,10 +199,23 @@ def main():
     if not switch in size_dict:
         abort_with_usage()
 
-    img_path = sys.argv[2]
+    grid_gap_vert = 0
+    grid_gap_horiz = 0
+
+    if len(sys.argv) == 6:
+        if sys.argv[2] != '--grid'  or not isint(sys.argv[3]) \
+                                    or not isint(sys.argv[4]):
+            abort_with_usage()
+        grid_gap_vert = int(sys.argv[3])
+        grid_gap_horiz = int(sys.argv[4])
+        img_path = sys.argv[5]
+    else:
+        """No grid wanted, therefore third argument is the image file"""
+        img_path = sys.argv[2]
+
     xls_path = img_path + "." + switch + ".xls"
 
-    img2xls(size_dict[switch], img_path, xls_path)
+    img2xls(size_dict[switch], img_path, xls_path, grid_gap_vert,grid_gap_horiz)
 
 if __name__ == "__main__":
     sys.exit(main())
