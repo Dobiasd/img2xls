@@ -9,6 +9,7 @@ from PIL import Image
 
 # constants for accessing the correct style-variation
 STYLE_CNT = 4
+STYLE_OFFSET_BORDER_NONE = 0
 STYLE_OFFSET_BORDER_TOP = 1
 STYLE_OFFSET_BORDER_LEFT = 2
 STYLE_OFFSET_BORDER_TOPLEFT = 3
@@ -85,29 +86,23 @@ def gen_style_lookup(img, pal_img, book):
         xlwt.add_palette_colour(col_name, palcolnum)
         book.set_colour_RGB(palcolnum, *img_pixels[x_pos, y_pos])
 
-        # cell without borders
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
-        style.pattern.pattern_fore_colour = palcolnum
-        style_lookup[palcolnum * STYLE_CNT] = style
-
-        # cell with top border
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
-        style.pattern.pattern_fore_colour = palcolnum
-        style.borders.top = 1
-        style_lookup[palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_TOP] = style
-
-        # cell with left border
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
-        style.pattern.pattern_fore_colour = palcolnum
-        style.borders.left = 1
-        style_lookup[palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_LEFT] = style
-
-        # cell with topleft border
-        style = xlwt.easyxf('pattern: pattern solid, fore_colour ' + col_name)
-        style.pattern.pattern_fore_colour = palcolnum
-        style.borders.top = 1
-        style.borders.left = 1
-        style_lookup[palcolnum*STYLE_CNT +STYLE_OFFSET_BORDER_TOPLEFT] = style
+        def add_new_style(top, left):
+            """Add a new style to lookup table with potential cell border."""
+            style = xlwt.easyxf('pattern: pattern solid, fore_colour ' +
+                                col_name)
+            style.pattern.pattern_fore_colour = palcolnum
+            style.borders.top = top
+            style.borders.left = left
+            offset_dict = {(0, 0): STYLE_OFFSET_BORDER_NONE,
+                           (1, 0): STYLE_OFFSET_BORDER_TOP,
+                           (0, 1): STYLE_OFFSET_BORDER_LEFT,
+                           (1, 1): STYLE_OFFSET_BORDER_TOPLEFT}
+            style_lookup[palcolnum * STYLE_CNT +
+                         offset_dict[(top, left)]] = style
+        add_new_style(0, 0)
+        add_new_style(1, 0)
+        add_new_style(0, 1)
+        add_new_style(1, 1)
 
     map2d(img.size, add_style_lookup)
 
@@ -117,31 +112,23 @@ def set_cell_colors(pal_img, style_lookup, sheet, grid_gap_vert=0,
                     grid_gap_horiz=0):
     """Pixelwise copies colors from image into table."""
     pal_pixels = pal_img.load()
+
     def write_sheet_cell(x_pos, y_pos):
         """Set a single pixel, i.e. cell, in table."""
-
         palcolnum = pal_pixels[x_pos, y_pos]
+        style_idx_offset = STYLE_OFFSET_BORDER_NONE
         if grid_gap_vert > 0 or grid_gap_horiz > 0:
             # Testing for a positive value because x modulo a negative number
             # is always zero
             if grid_gap_vert > 0 and x_pos % grid_gap_vert == 0:
                 if grid_gap_horiz > 0 and y_pos % grid_gap_horiz == 0:
-                    idx = palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_TOPLEFT
-                    style = style_lookup[idx]
+                    style_idx_offset = STYLE_OFFSET_BORDER_TOPLEFT
                 else:
-                    idx = palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_LEFT
-                    style = style_lookup[idx]
+                    style_idx_offset = STYLE_OFFSET_BORDER_LEFT
             elif grid_gap_horiz > 0 and y_pos % grid_gap_horiz == 0:
-                idx = palcolnum * STYLE_CNT + STYLE_OFFSET_BORDER_TOP
-                style = style_lookup[idx]
-            else:
-                # No borders needed
-                style = style_lookup[palcolnum * STYLE_CNT]
-        else:
-            # No borders wanted
-            style = style_lookup[palcolnum * STYLE_CNT]
-        # Write style for the cell to the sheet
-        sheet.write(y_pos, x_pos, ' ', style)
+                style_idx_offset = STYLE_OFFSET_BORDER_TOP
+        sheet.write(y_pos, x_pos, ' ',
+                    style_lookup[palcolnum * STYLE_CNT + style_idx_offset])
 
     map2d(pal_img.size, write_sheet_cell)
 
@@ -204,8 +191,8 @@ def main():
     grid_gap_horiz = 0
 
     if len(sys.argv) == 6:
-        if sys.argv[2] != '--grid'  or not isint(sys.argv[3]) \
-                                    or not isint(sys.argv[4]):
+        if sys.argv[2] != '--grid' or not isint(sys.argv[3]) \
+                                   or not isint(sys.argv[4]):
             abort_with_usage()
         grid_gap_vert = int(sys.argv[3])
         grid_gap_horiz = int(sys.argv[4])
