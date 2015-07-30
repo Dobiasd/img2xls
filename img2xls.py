@@ -80,7 +80,6 @@ def gen_style_lookup(img, pal_img, book):
         # We need to define a style for every possible style-combination
         # In our case: 1) cell without border 2) cell with top border
         # 3) cell with left border 4) cell with top & left border
-
         already_used_colors.add(palcolnum)
         col_name = "custom_colour_" + str(palcolnum)
         xlwt.add_palette_colour(col_name, palcolnum)
