@@ -6,6 +6,7 @@ import xlwt
 import os
 import re
 from PIL import Image
+import argparse
 
 # constants for accessing the correct style-variation
 STYLE_CNT = 4
@@ -150,57 +151,29 @@ def img2xls(c_width, img_path, xls_path, grid_gap_vert, grid_gap_horiz):
     book.save(xls_path)
     print('saved', xls_path)
 
-def print_usage():
-    """Show command line usage."""
-    print("Usage: python img2xls.py format \
-[--grid <vertical gap> <horizontal gap>] image")
-    print("                         format = libre -> LibreOffice xls")
-    print("                         format = ms    -> Microsoft Office xls")
-    print("                         format = mac   -> Mac Office xls")
-    print("                         --grid 10 0 -> every 10 pixels there will\
-be a vertical grid line. 0 means no grid on this axis")
-
-def abort_with_usage():
-    """Quit program because of invalid command line usage."""
-    print_usage()
-    sys.exit(2)
-
-def isint(val):
-    """returns true if passed value can be converted to an int."""
-    try:
-        int(val)
-        return True
-    except ValueError:
-        return False
-
 def main():
     """Parse command line and run."""
-    if len(sys.argv) != 3 and len(sys.argv) != 6:
-        abort_with_usage()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('format', choices=['libre', 'ms', 'mac'],
+help = 'Choose the office package to use. | libre -> LibreOffice xls | \
+ms    -> Microsoft Office xls | mac   -> Mac Office xls')
+    parser.add_argument('image', help = 'Image which should be converted into\
+a spreadsheet')
+    parser.add_argument('--grid', nargs=2, type=int, default=0, help='Adds a \
+grid to the resulting spreadsheet. Numbers represent the number of pixels \
+between vertical and horizontal grid lines, respectively. 0 (zero) means no \
+grid on this axis.')
+    args = parser.parse_args()
 
-    switch = sys.argv[1]
-
+    switch = args.format
     size_dict = {"libre": (25000, 10000),
                  "ms": (50000, 10000),
                  "mac": (135000, 10000)}
 
-    if not switch in size_dict:
-        abort_with_usage()
+    grid_gap_vert = args.grid[0]
+    grid_gap_horiz = args.grid[1]
 
-    grid_gap_vert = 0
-    grid_gap_horiz = 0
-
-    if len(sys.argv) == 6:
-        if sys.argv[2] != '--grid' or not isint(sys.argv[3]) \
-                                   or not isint(sys.argv[4]):
-            abort_with_usage()
-        grid_gap_vert = int(sys.argv[3])
-        grid_gap_horiz = int(sys.argv[4])
-        img_path = sys.argv[5]
-    else:
-        # No grid wanted, therefore third argument is the image file
-        img_path = sys.argv[2]
-
+    img_path = args.image
     xls_path = img_path + "." + switch + ".xls"
 
     img2xls(size_dict[switch], img_path, xls_path, grid_gap_vert,
