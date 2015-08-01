@@ -155,11 +155,11 @@ def main():
     """Parse command line and run."""
     parser = argparse.ArgumentParser()
     parser.add_argument('format', choices=['libre', 'ms', 'mac'],
-help = 'Choose the office package to use. | libre -> LibreOffice xls | \
+                        help='Choose the office package to use. | libre -> LibreOffice xls | \
 ms    -> Microsoft Office xls | mac   -> Mac Office xls')
-    parser.add_argument('image', help = 'Image which should be converted into\
+    parser.add_argument('image', help='Image which should be converted into\
 a spreadsheet')
-    parser.add_argument('--grid', nargs=2, type=int, default=[0,0], help='Adds \
+    parser.add_argument('--grid', nargs=2, type=int, default=[0, 0], help='Adds \
 a grid to the resulting spreadsheet. Numbers represent the number of pixels \
 between vertical and horizontal grid lines, respectively. 0 (zero) means no \
 grid on this axis.')
