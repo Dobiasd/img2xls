@@ -10,11 +10,25 @@ Convert images to colored cells in an Excel spreadsheet.
 
 ## Usage
 
+    usage: img2xls.py [-h] [--grid GRID GRID] {libre,ms,mac} image
+
+    positional arguments:
+      {libre,ms,mac}    Choose the office package to use. | libre -> LibreOffice
+                        xls | ms -> Microsoft Office xls | mac -> Mac Office xls
+      image             Image which should be converted intoa spreadsheet
+
+    optional arguments:
+      -h, --help        show this help message and exit
+      --grid GRID GRID  Adds a grid to the resulting spreadsheet. Numbers
+                        represent the number of pixels between vertical and
+                        horizontal grid lines, respectively. 0 (zero) means no
+                        grid on this axis.
+
+### Example
+
     python3 img2xls.py libre image.png
 
-image.png.xls will be created.
-
-Since different spredsheet programs processes the cell sizes in different ways, you can use `mac` or `ms` instead of `libre` for Mac Excel or MS Excel output format respectively.
+image.png.libre.xls will be created.
 
 ---------------------------------------
 
